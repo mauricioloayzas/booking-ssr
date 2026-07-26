@@ -16,7 +16,7 @@ useSeoMeta({
     <div class="state-container">
       <div class="state-icon">📅</div>
       <h2>Portal de agendamiento de Clichín</h2>
-      <p>Para reservar una cita necesitas el enlace directo de tu negocio (por ejemplo, clichin.com/agendar/nombre-del-negocio).</p>
+      <p>Para reservar una cita necesitas el enlace directo de tu negocio (por ejemplo, agenda.clichin.app/agendar/nombre-del-negocio).</p>
     </div>
   </main>
 </template>

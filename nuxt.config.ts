@@ -29,7 +29,7 @@ export default defineNuxtConfig({
       apiProfessionalisBase: process.env.NUXT_PUBLIC_API_PROFESSIONALIS_BASE || '',
       apiCollectorBase: process.env.NUXT_PUBLIC_API_COLLECTOR_BASE || '',
       recaptchaSiteKey: process.env.NUXT_PUBLIC_RECAPTCHA_SITE_KEY || '',
-      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://clichin.com',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://agenda.clichin.app',
     },
   },
 })

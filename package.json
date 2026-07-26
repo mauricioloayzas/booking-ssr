@@ -7,8 +7,8 @@
     "build": "nuxt build",
     "preview": "node .output/server/index.mjs",
     "postinstall": "nuxt prepare",
-    "deploy:dev": "nuxt build --dotenv .env && AWS_PROFILE=mauloasan aws s3 sync .output/public/ s3://clichin-booking-assets-dev/ --delete --cache-control \"max-age=31536000,public\" && AWS_PROFILE=mauloasan npx sls deploy --stage dev",
-    "deploy:prod": "nuxt build && AWS_PROFILE=mauloasan aws s3 sync .output/public/ s3://clichin-booking-assets-prod/ --delete --cache-control \"max-age=31536000,public\" && AWS_PROFILE=mauloasan npx sls deploy --stage prod"
+    "deploy:dev": "NUXT_APP_CDN_URL=https://clichin-booking-assets-dev.s3.amazonaws.com nuxt build --dotenv .env && AWS_PROFILE=mauloasan RECAPTCHA_SITE_KEY=6LeRZ9csAAAAAEngAr6LDukxgdON--FF-Jw6LExz npx sls deploy --stage dev && AWS_PROFILE=mauloasan aws s3 sync .output/public/ s3://clichin-booking-assets-dev/ --delete --cache-control \"max-age=31536000,public\"",
+    "deploy:prod": "NUXT_APP_CDN_URL=https://clichin-booking-assets-prod.s3.amazonaws.com nuxt build && AWS_PROFILE=mauloasan RECAPTCHA_SITE_KEY=6LeRZ9csAAAAAEngAr6LDukxgdON--FF-Jw6LExz npx sls deploy --stage prod && AWS_PROFILE=mauloasan aws s3 sync .output/public/ s3://clichin-booking-assets-prod/ --delete --cache-control \"max-age=31536000,public\""
   },
   "dependencies": {
     "nuxt": "^3.21.2"

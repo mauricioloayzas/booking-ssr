@@ -26,16 +26,16 @@ custom:
     prod: https://qbjvrgskk7.execute-api.us-east-1.amazonaws.com
   apiApothecaBase:
     dev: https://spngyrrbc4.execute-api.us-east-1.amazonaws.com
-    prod: https://CAMBIAR-apotheca-prod.execute-api.us-east-1.amazonaws.com
+    prod: https://meuguwhm6j.execute-api.us-east-1.amazonaws.com
   apiProfessionalisBase:
     dev: https://ag1e72jvr7.execute-api.us-east-1.amazonaws.com
-    prod: https://CAMBIAR-professionalis-prod.execute-api.us-east-1.amazonaws.com
+    prod: https://e02k3i49jc.execute-api.us-east-1.amazonaws.com
   apiCollectorBase:
     dev: https://sja0cciay0.execute-api.us-east-1.amazonaws.com
-    prod: https://CAMBIAR-collector-prod.execute-api.us-east-1.amazonaws.com
+    prod: https://6rds6jb9ok.execute-api.us-east-1.amazonaws.com
   siteUrl:
-    dev: https://dev.clichin.com
-    prod: https://clichin.com
+    dev: https://dev.agenda.clichin.app
+    prod: https://agenda.clichin.app
 
   # Bucket S3 donde se sincronizan los assets del build (.output/public/) después de cada deploy
   assetsBucket:
@@ -62,7 +62,29 @@ package:
     - '.output/server/**'
 
 resources:
+  Conditions:
+    # agenda.clichin.app solo se conecta en prod (certificado ACM ya validado);
+    # dev sigue usando únicamente la URL cruda de execute-api.
+    IsProd: !Equals ['${sls:stage}', 'prod']
+
   Resources:
+    AgendaDomainName:
+      Type: AWS::ApiGatewayV2::DomainName
+      Condition: IsProd
+      Properties:
+        DomainName: agenda.clichin.app
+        DomainNameConfigurations:
+          - CertificateArn: arn:aws:acm:us-east-1:996197173188:certificate/341228c3-3ef9-4cdd-8c3a-7dc6de98b84a
+            EndpointType: REGIONAL
+
+    AgendaApiMapping:
+      Type: AWS::ApiGatewayV2::ApiMapping
+      Condition: IsProd
+      Properties:
+        ApiId: !Ref HttpApi
+        DomainName: !Ref AgendaDomainName
+        Stage: !Ref HttpApiStage
+
     BookingAssetsBucket:
       Type: AWS::S3::Bucket
       DeletionPolicy: Retain
@@ -89,3 +111,11 @@ resources:
               Principal: '*'
               Action: 's3:GetObject'
               Resource: !Sub '${BookingAssetsBucket.Arn}/*'
+
+  Outputs:
+    AgendaRegionalDomainName:
+      Condition: IsProd
+      Value: !GetAtt AgendaDomainName.RegionalDomainName
+    AgendaRegionalHostedZoneId:
+      Condition: IsProd
+      Value: !GetAtt AgendaDomainName.RegionalHostedZoneId
