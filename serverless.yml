@@ -37,6 +37,15 @@ custom:
     dev: https://dev.agenda.clichin.app
     prod: https://agenda.clichin.app
 
+  # Orígenes permitidos para que el navegador cargue los assets (_nuxt/*.js) del bucket
+  # S3 — sin esto, los chunks que Nuxt carga vía import() dinámico fallan por CORS.
+  corsOrigins:
+    dev:
+      - https://dev.agenda.clichin.app
+    prod:
+      - https://agenda.clichin.app
+      - https://fkpmo52c5k.execute-api.us-east-1.amazonaws.com
+
   # Bucket S3 donde se sincronizan los assets del build (.output/public/) después de cada deploy
   assetsBucket:
     dev: clichin-booking-assets-dev
@@ -101,6 +110,12 @@ resources:
             - ObjectOwnership: BucketOwnerPreferred
         WebsiteConfiguration:
           IndexDocument: index.html
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins: ${self:custom.corsOrigins.${sls:stage}}
+              AllowedMethods: [GET, HEAD]
+              AllowedHeaders: ['*']
+              MaxAge: 3000
     BookingAssetsBucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
