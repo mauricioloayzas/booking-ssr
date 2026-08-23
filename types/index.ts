@@ -70,7 +70,7 @@ export interface CitaPublicaCreada {
   estado: string
 }
 
-export type GatewayType = 'payphone' | 'bank' | 'effective'
+export type GatewayType = 'payphone' | 'payphone_split' | 'bank' | 'effective'
 
 export interface BankConfigurationData {
   banco: string

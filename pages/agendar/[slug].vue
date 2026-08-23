@@ -336,6 +336,7 @@ async function cargarMetodosPago() {
 const gatewayLabels: Record<string, string> = {
   bank: 'Transferencia bancaria',
   payphone: 'Tarjeta (Payphone)',
+  payphone_split: 'Tarjeta (Payphone)',
   effective: 'Efectivo en el local',
 }
 
@@ -353,7 +354,7 @@ async function elegirMetodo(pm: PublicPaymentMethod) {
     return
   }
 
-  if (pm.gateway_type === 'payphone') {
+  if (pm.gateway_type === 'payphone' || pm.gateway_type === 'payphone_split') {
     await pagarConPayphone(pm)
   } else if (pm.gateway_type === 'bank') {
     await generarDatosBancarios()
@@ -679,7 +680,7 @@ function volver() {
             </button>
           </div>
 
-          <div v-else-if="metodoSeleccionado.gateway_type === 'payphone'" class="state-container">
+          <div v-else-if="metodoSeleccionado.gateway_type === 'payphone' || metodoSeleccionado.gateway_type === 'payphone_split'" class="state-container">
             <p>{{ pagoLoading ? 'Redirigiendo a Payphone…' : 'Preparando el pago…' }}</p>
           </div>
 
