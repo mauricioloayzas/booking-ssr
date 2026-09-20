@@ -42,6 +42,7 @@ custom:
   corsOrigins:
     dev:
       - https://dev.agenda.clichin.app
+      - https://jx4tm0k3ie.execute-api.us-east-1.amazonaws.com
     prod:
       - https://agenda.clichin.app
       - https://fkpmo52c5k.execute-api.us-east-1.amazonaws.com
