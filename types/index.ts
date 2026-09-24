@@ -73,8 +73,6 @@ export interface CitaPublicaCreada {
 export type GatewayType = 'payphone' | 'payphone_split' | 'bank' | 'effective'
 
 export interface BankConfigurationData {
-  /** Opcional: cómo la nombró el negocio, para distinguirla si tiene más de una cuenta. */
-  alias?: string | null
   banco: string
   tipo_cuenta: string
   numero_cuenta: string
