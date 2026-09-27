@@ -75,6 +75,7 @@ const email = ref('')
 const tipoIdentificacion = ref('05')
 const identificacion = ref('')
 const notas = ref('')
+const aceptaTerminos = ref(false)
 const resultado = ref<{ fecha: string; hora_inicio: string; hora_fin: string } | null>(null)
 const successMensaje = ref('')
 
@@ -208,6 +209,10 @@ async function confirmar() {
   }
   if (!identificacion.value) {
     submitError.value = 'Completa tu número de identificación.'
+    return
+  }
+  if (!aceptaTerminos.value) {
+    submitError.value = 'Debes aceptar los Términos y la Política de Privacidad para continuar.'
     return
   }
 
@@ -657,6 +662,14 @@ function volver() {
             <div v-if="servicioSeleccionado" class="summary-row"><span class="label">Servicio</span><span class="value">{{ servicioSeleccionado.name }}</span></div>
             <div class="summary-row"><span class="label">Fecha</span><span class="value">{{ fecha }}</span></div>
             <div class="summary-row"><span class="label">Hora</span><span class="value">{{ horaInicio }} - {{ horaFin }}</span></div>
+          </div>
+
+          <div class="consent-check">
+            <input id="acepta-terminos" v-model="aceptaTerminos" type="checkbox">
+            <label for="acepta-terminos">
+              Acepto los <a href="https://www.mauloasan.com/terms" target="_blank" rel="noopener">Términos y Condiciones</a>
+              y la <a href="https://www.mauloasan.com/privacy" target="_blank" rel="noopener">Política de Privacidad</a>.
+            </label>
           </div>
 
           <button class="btn btn-primary" style="margin-top:14px;" type="button" :disabled="submitting || verificandoIdentidad" @click="confirmar">
