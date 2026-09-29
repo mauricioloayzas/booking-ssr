@@ -2,6 +2,7 @@ import type {
   CitaPublicaCreada,
   ClienteAuthVerifyResponse,
   ClienteCheckResponse,
+  ClienteResolveResponse,
   CrearCitaPublicaPayload,
   DisponibilidadSlot,
   PreparePaymentPublicPayload,
@@ -55,6 +56,9 @@ export function usePublicBooking() {
 
     checkCliente: (profileId: string, identificacion: string) =>
       professionalis.get<ClienteCheckResponse>(`/public/profiles/${profileId}/clientes/check`, { identificacion }),
+
+    resolverCliente: (profileId: string, identificacion: string, verificationId: string) =>
+      professionalis.get<ClienteResolveResponse>(`/public/profiles/${profileId}/clientes/resolve`, { identificacion, verification_id: verificationId }),
 
     solicitarCodigoCliente: (email: string, recaptchaToken?: string) =>
       auth.post<{ message: string }>('/public/cliente-auth/request-code', { email, recaptchaToken }),

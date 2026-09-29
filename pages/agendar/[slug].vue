@@ -79,6 +79,7 @@ const aceptaTerminos = ref(false)
 const resultado = ref<{ fecha: string; hora_inicio: string; hora_fin: string } | null>(null)
 const successMensaje = ref('')
 
+const identidadResuelta = ref(false)
 const identidadVerificacion = ref<{ requerida: boolean; emailHint: string | null } | null>(null)
 const verificandoIdentidad = ref(false)
 const verificationId = ref('')
@@ -201,14 +202,38 @@ function seleccionarSlot(slot: { hora_inicio: string; hora_fin: string }) {
   step.value = 'contacto'
 }
 
+async function verificarIdentificacion() {
+  if (verificandoIdentidad.value) return // evita doble clic/doble tap disparando el check dos veces
+  submitError.value = ''
+  if (!identificacion.value) {
+    submitError.value = 'Completa tu número de identificación.'
+    return
+  }
+
+  verificandoIdentidad.value = true
+  try {
+    const check = await booking.checkCliente(profile.value!.id, identificacion.value)
+    if (check.data?.requiere_verificacion) {
+      identidadVerificacion.value = {
+        requerida: true,
+        emailHint: check.data.email_hint ?? null,
+      }
+    } else {
+      identidadResuelta.value = true
+    }
+  } catch {
+    // Falla abierto: si la pista de UX no responde, dejamos seguir como cliente nuevo.
+    // El control real (bloqueante) está en el backend al crear la cita.
+    identidadResuelta.value = true
+  } finally {
+    verificandoIdentidad.value = false
+  }
+}
+
 async function confirmar() {
   submitError.value = ''
   if (!nombreContacto.value || !telefonoContacto.value || !email.value) {
     submitError.value = 'Completa tu nombre, teléfono y email.'
-    return
-  }
-  if (!identificacion.value) {
-    submitError.value = 'Completa tu número de identificación.'
     return
   }
   if (!aceptaTerminos.value) {
@@ -216,30 +241,11 @@ async function confirmar() {
     return
   }
 
-  if (!verificationId.value) {
-    verificandoIdentidad.value = true
-    try {
-      const check = await booking.checkCliente(profile.value!.id, identificacion.value)
-      if (check.data?.requiere_verificacion) {
-        identidadVerificacion.value = {
-          requerida: true,
-          emailHint: check.data.email_hint ?? null,
-        }
-        otpEmail.value = email.value
-        verificandoIdentidad.value = false
-        return
-      }
-    } catch {
-      // Falla abierto: si la pista de UX no responde, no bloqueamos el agendamiento.
-      // El control real (bloqueante) está en el backend al crear la cita.
-    }
-    verificandoIdentidad.value = false
-  }
-
   await crearCitaFinal()
 }
 
 async function crearCitaFinal() {
+  if (submitting.value) return
   submitting.value = true
   try {
     const res = await booking.crearCita(profile.value!.id, {
@@ -270,6 +276,7 @@ async function crearCitaFinal() {
       ?? (e as { statusCode?: number })?.statusCode
     if (status === 403) {
       // Puede pasar en una carrera: alguien reclamó la identidad entre el chequeo y el envío.
+      identidadResuelta.value = false
       identidadVerificacion.value = { requerida: true, emailHint: null }
       otpEmail.value = email.value
       verificationId.value = ''
@@ -281,6 +288,7 @@ async function crearCitaFinal() {
 }
 
 async function solicitarCodigoOtp() {
+  if (otpEnviando.value) return
   otpError.value = ''
   if (!otpEmail.value) {
     otpError.value = 'Ingresa tu email.'
@@ -299,6 +307,7 @@ async function solicitarCodigoOtp() {
 }
 
 async function verificarCodigoOtp() {
+  if (otpVerificando.value) return
   otpError.value = ''
   if (!otpCode.value) {
     otpError.value = 'Ingresa el código que te enviamos.'
@@ -308,10 +317,26 @@ async function verificarCodigoOtp() {
   try {
     const res = await booking.verificarCodigoCliente(otpEmail.value, otpCode.value)
     verificationId.value = res.data.verification_id
-    identidadVerificacion.value = null
+
+    try {
+      const resolved = await booking.resolverCliente(profile.value!.id, identificacion.value, verificationId.value)
+      if (resolved.data?.exists) {
+        nombreContacto.value = resolved.data.razon_social ?? nombreContacto.value
+        telefonoContacto.value = resolved.data.telefono ?? telefonoContacto.value
+        email.value = resolved.data.email ?? email.value
+      }
+    } catch {
+      // Best-effort: si falla el autocompletado, igual puede llenar el resto a mano.
+    }
+
+    // Recién acá, todos juntos: mientras se resuelve el autocompletado, el botón "Verificar"
+    // sigue en pantalla mostrando "Verificando…" (otpVerificando solo se apaga en el finally).
+    // Si otpEnviado/identidadVerificacion se limpiaban antes de este punto, por unos segundos
+    // se veía otra pantalla intermedia (pedir email, o la cédula) en vez de seguir cargando.
     otpEnviado.value = false
     otpCode.value = ''
-    await crearCitaFinal()
+    identidadVerificacion.value = null
+    identidadResuelta.value = true
   } catch (e: unknown) {
     otpError.value = (e as { data?: { error?: string } })?.data?.error || 'Código incorrecto o expirado.'
   } finally {
@@ -600,34 +625,26 @@ function volver() {
       <div v-else-if="step === 'contacto'" class="card">
         <div class="step-label">Paso 7 · Tus datos</div>
         <div v-if="submitError" class="alert-error">{{ submitError }}</div>
-        <div class="field">
-          <label for="nombre">Nombre completo</label>
-          <input id="nombre" v-model="nombreContacto" type="text">
-        </div>
-        <div class="field">
-          <label for="telefono">Teléfono</label>
-          <input id="telefono" v-model="telefonoContacto" type="tel">
-        </div>
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" v-model="email" type="email" required>
-        </div>
-        <div class="field">
-          <label for="tipo-identificacion">Tipo de identificación</label>
-          <select id="tipo-identificacion" v-model="tipoIdentificacion">
-            <option v-for="t in TIPOS_IDENTIFICACION" :key="t.value" :value="t.value">{{ t.label }}</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="identificacion">Número de {{ TIPOS_IDENTIFICACION.find(t => t.value === tipoIdentificacion)?.label.toLowerCase() }}</label>
-          <input id="identificacion" v-model="identificacion" type="text">
-        </div>
-        <div class="field">
-          <label for="notas">Notas (opcional)</label>
-          <textarea id="notas" v-model="notas" rows="2" />
-        </div>
 
-        <div v-if="identidadVerificacion?.requerida" class="card" style="background: var(--gray-50); margin-top: 0;">
+        <!-- Etapa 1: identificación primero — si ya está registrada, evita re-tipear el resto -->
+        <template v-if="!identidadResuelta && !identidadVerificacion?.requerida">
+          <div class="field">
+            <label for="tipo-identificacion">Tipo de identificación</label>
+            <select id="tipo-identificacion" v-model="tipoIdentificacion">
+              <option v-for="t in TIPOS_IDENTIFICACION" :key="t.value" :value="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="identificacion">Número de {{ TIPOS_IDENTIFICACION.find(t => t.value === tipoIdentificacion)?.label.toLowerCase() }}</label>
+            <input id="identificacion" v-model="identificacion" type="text">
+          </div>
+          <button class="btn btn-primary" type="button" :disabled="verificandoIdentidad" @click="verificarIdentificacion">
+            {{ verificandoIdentidad ? 'Comprobando…' : 'Continuar' }}
+          </button>
+        </template>
+
+        <!-- Etapa 2: ya está registrada — verificar por código antes de autocompletar -->
+        <div v-else-if="identidadVerificacion?.requerida" class="card" style="background: var(--gray-50); margin-top: 0;">
           <p>
             <strong>Esta identificación ya está registrada.</strong>
             Verifica tu email para continuar<template v-if="identidadVerificacion.emailHint"> ({{ identidadVerificacion.emailHint }})</template>.
@@ -656,7 +673,25 @@ function volver() {
           <button class="btn btn-outline" style="margin-top:8px;" type="button" @click="cancelarVerificacionIdentidad">Cancelar</button>
         </div>
 
+        <!-- Etapa 3: identidad resuelta (nueva, o verificada y autocompletada) — resto del formulario -->
         <template v-else>
+          <div class="field">
+            <label for="nombre">Nombre completo</label>
+            <input id="nombre" v-model="nombreContacto" type="text">
+          </div>
+          <div class="field">
+            <label for="telefono">Teléfono</label>
+            <input id="telefono" v-model="telefonoContacto" type="tel">
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" v-model="email" type="email" required>
+          </div>
+          <div class="field">
+            <label for="notas">Notas (opcional)</label>
+            <textarea id="notas" v-model="notas" rows="2" />
+          </div>
+
           <div class="card" style="background: var(--gray-50); margin-top: 0;">
             <div class="summary-row"><span class="label">Profesional</span><span class="value">{{ profesionalSeleccionado?.nombre }}</span></div>
             <div v-if="servicioSeleccionado" class="summary-row"><span class="label">Servicio</span><span class="value">{{ servicioSeleccionado.name }}</span></div>
@@ -672,8 +707,8 @@ function volver() {
             </label>
           </div>
 
-          <button class="btn btn-primary" style="margin-top:14px;" type="button" :disabled="submitting || verificandoIdentidad" @click="confirmar">
-            {{ verificandoIdentidad ? 'Verificando…' : submitting ? 'Guardando…' : 'Continuar' }}
+          <button class="btn btn-primary" style="margin-top:14px;" type="button" :disabled="submitting" @click="confirmar">
+            {{ submitting ? 'Guardando…' : 'Continuar' }}
           </button>
         </template>
       </div>

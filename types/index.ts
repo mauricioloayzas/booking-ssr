@@ -119,3 +119,10 @@ export interface ClienteAuthVerifyResponse {
   email: string
   expires_at: string
 }
+
+export interface ClienteResolveResponse {
+  exists: boolean
+  razon_social?: string
+  telefono?: string | null
+  email?: string | null
+}
