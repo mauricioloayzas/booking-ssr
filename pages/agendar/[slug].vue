@@ -393,6 +393,9 @@ async function elegirMetodo(pm: PublicPaymentMethod) {
   metodoSeleccionado.value = pm
 
   if (pm.gateway_type === 'effective') {
+    // El cliente ya hizo su parte (eligió efectivo) — nunca se debe liberar este turno
+    // automáticamente a las 24h, solo recordarle al negocio que confirme.
+    await booking.marcarRequiereConfirmacion(profile.value!.id, citaId.value).catch(() => {})
     terminarSinPago('Pagarás directamente en el local. Te esperamos.')
     return
   }
@@ -472,6 +475,9 @@ async function handleSubirComprobante() {
   pagoError.value = ''
   try {
     await booking.subirComprobante(bankTransaction.value.transaction_id, comprobanteBase64.value, comprobanteMimeType.value)
+    // El cliente ya hizo su parte (subió el comprobante) — nunca se debe liberar este turno
+    // automáticamente a las 24h, solo recordarle al negocio que lo revise y confirme.
+    await booking.marcarRequiereConfirmacion(profile.value!.id, citaId.value).catch(() => {})
     terminarSinPago('Recibimos tu comprobante. El negocio lo revisará y confirmará tu cita.')
   } catch (e: unknown) {
     pagoError.value = (e as { data?: { error?: string } })?.data?.error || 'No pudimos subir el comprobante. Intenta de nuevo.'

@@ -71,6 +71,15 @@ export function usePublicBooking() {
         transaction_id: transactionId,
       }),
 
+    // El cliente ya hizo su parte (eligió efectivo, o subió el comprobante de una
+    // transferencia) — marca la cita para que expirarPendientes.php (professionalis) nunca
+    // la borre automáticamente a las 24h, solo le recuerde al negocio confirmarla.
+    marcarRequiereConfirmacion: (profileId: string, citaId: string) =>
+      professionalis.patch<{ id: string; requiere_confirmacion_negocio: boolean }>(
+        `/public/profiles/${profileId}/citas/${citaId}/requiere-confirmacion`,
+        {}
+      ),
+
     getPaymentMethods: (profileId: string) =>
       collector.get<PublicPaymentMethod[]>(`/public/profiles/${profileId}/payment-methods`),
 
