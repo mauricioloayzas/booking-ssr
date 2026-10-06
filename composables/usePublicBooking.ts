@@ -73,11 +73,12 @@ export function usePublicBooking() {
 
     // El cliente ya hizo su parte (eligió efectivo, o subió el comprobante de una
     // transferencia) — marca la cita para que expirarPendientes.php (professionalis) nunca
-    // la borre automáticamente a las 24h, solo le recuerde al negocio confirmarla.
-    marcarRequiereConfirmacion: (profileId: string, citaId: string) =>
+    // la borre automáticamente a las 24h, solo le recuerde al negocio confirmarla. El motivo
+    // solo se usa para redactar bien el correo de recordatorio al negocio.
+    marcarRequiereConfirmacion: (profileId: string, citaId: string, motivo: 'efectivo' | 'comprobante') =>
       professionalis.patch<{ id: string; requiere_confirmacion_negocio: boolean }>(
         `/public/profiles/${profileId}/citas/${citaId}/requiere-confirmacion`,
-        {}
+        { motivo }
       ),
 
     getPaymentMethods: (profileId: string) =>
