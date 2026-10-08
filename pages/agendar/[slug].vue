@@ -374,13 +374,25 @@ const gatewayLabels: Record<string, string> = {
 // etiqueta genérica ("Transferencia bancaria"), indistinguibles entre sí antes de elegir.
 // Se distinguen mostrando el nombre del banco (+ los últimos 4 dígitos, por si dos
 // cuentas son del mismo banco).
+// Si el negocio activó el recargo por Payphone, el cliente paga este % más — se le muestra
+// el total real ANTES de elegir Payphone, nunca lo descubre recién al ver el cobro.
+function montoConRecargo(pm: PublicPaymentMethod): number {
+  const base = servicioSeleccionado.value?.sale_price ?? 0
+  if (!pm.recargo_habilitado || !pm.recargo_porcentaje) return base
+  return base * (1 + pm.recargo_porcentaje / 100)
+}
+
 function paymentOptionLabel(pm: PublicPaymentMethod): string {
   if (pm.gateway_type === 'bank' && pm.configuration_data) {
     const { banco, numero_cuenta } = pm.configuration_data
     const ultimos4 = numero_cuenta ? numero_cuenta.slice(-4) : ''
     return banco ? `Transferencia — ${banco}${ultimos4 ? ` ****${ultimos4}` : ''}` : gatewayLabels.bank!
   }
-  return gatewayLabels[pm.gateway_type] ?? pm.gateway_type
+  const label = gatewayLabels[pm.gateway_type] ?? pm.gateway_type
+  if ((pm.gateway_type === 'payphone' || pm.gateway_type === 'payphone_split') && pm.recargo_habilitado) {
+    return `${label} — $${montoConRecargo(pm).toFixed(2)}`
+  }
+  return label
 }
 
 function terminarSinPago(mensaje: string) {
@@ -749,6 +761,7 @@ function volver() {
 
           <div v-else-if="metodoSeleccionado.gateway_type === 'payphone' || metodoSeleccionado.gateway_type === 'payphone_split'" class="state-container">
             <p>{{ pagoLoading ? 'Redirigiendo a Payphone…' : 'Preparando el pago…' }}</p>
+            <p v-if="metodoSeleccionado.recargo_habilitado">Total a pagar: ${{ montoConRecargo(metodoSeleccionado).toFixed(2) }}</p>
           </div>
 
           <div v-else-if="metodoSeleccionado.gateway_type === 'bank'">
