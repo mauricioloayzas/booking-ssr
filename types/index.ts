@@ -7,6 +7,11 @@ export interface PublicProfile {
   name: string
   url_name: string
   type: string
+  descripcion?: string | null
+  direccion?: string | null
+  logo_url?: string | null
+  banner_url?: string | null
+  telefono_contacto?: string | null
 }
 
 export interface PublicCategoriaServicio {
@@ -18,6 +23,8 @@ export interface PublicProfesional {
   id: string
   nombre: string
   categoria_ids: string[]
+  foto_url?: string | null
+  bio?: string | null
 }
 
 export interface PublicServicio {

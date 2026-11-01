@@ -15,7 +15,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const urls = profiles
-    .map(p => `  <url><loc>${config.public.siteUrl}/agendar/${p.url_name}</loc><changefreq>weekly</changefreq></url>`)
+    .flatMap(p => [
+      `  <url><loc>${config.public.siteUrl}/${p.url_name}</loc><changefreq>weekly</changefreq></url>`,
+      `  <url><loc>${config.public.siteUrl}/agendar/${p.url_name}</loc><changefreq>weekly</changefreq></url>`,
+    ])
     .join('\n')
 
   return `<?xml version="1.0" encoding="UTF-8"?>
