@@ -42,6 +42,9 @@ export function usePublicBooking() {
     getServiciosDelProfesional: (profileId: string, profesionalId: string) =>
       professionalis.get<{ servicio_id: string }[]>(`/public/profiles/${profileId}/profesionales/${profesionalId}/servicios`),
 
+    getProfesionalesDelServicio: (profileId: string, servicioId: string) =>
+      professionalis.get<{ profesional_id: string }[]>(`/public/profiles/${profileId}/servicios/${servicioId}/profesionales`),
+
     getEstablecimientosDelProfesional: (profileId: string, profesionalId: string) =>
       professionalis.get<{ warehouse_id: string }[]>(`/public/profiles/${profileId}/profesionales/${profesionalId}/establecimientos`),
 

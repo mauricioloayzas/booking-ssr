@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { PublicServicio } from '~/types'
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const slug = route.params.slug as string
@@ -89,6 +91,12 @@ const mapsUrl = computed(() =>
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.value.direccion)}`
     : null
 )
+
+const modalServicio = ref<PublicServicio | null>(null)
+// Tras un pago con Payphone, el navegador vuelve aquí tras un full-redirect — el modal
+// perdió todo su estado en el camino, así que avisamos con un banner simple en vez de
+// intentar reabrirlo con el servicio/día/hora que ya no tenemos.
+const volviendoDePayphone = route.query.pago === 'ok'
 </script>
 
 <template>
@@ -103,6 +111,10 @@ const mapsUrl = computed(() =>
       :style="profile.banner_url ? { background: `url('${profile.banner_url}') center / cover` } : {}"
     />
     <div class="container">
+      <div v-if="volviendoDePayphone" class="card" style="background: var(--green-50); color: var(--green-600); margin-top: 16px;">
+        Tu pago fue procesado. {{ profile.name }} confirmará tu cita en breve.
+      </div>
+
       <div class="hero-info">
         <img v-if="profile.logo_url" :src="profile.logo_url" :alt="profile.name" class="hero-logo">
         <div v-else class="hero-logo hero-logo-placeholder">{{ iniciales(profile.name) }}</div>
@@ -159,9 +171,9 @@ const mapsUrl = computed(() =>
                 ${{ s.sale_price.toFixed(2) }}<template v-if="s.duracion_minutos"> · {{ s.duracion_minutos }} min</template>
               </p>
             </div>
-            <NuxtLink :to="`/agendar/${slug}?servicio_id=${s.id}`" class="btn btn-outline service-btn">
+            <button type="button" class="btn btn-outline service-btn" @click="modalServicio = s">
               Agendar
-            </NuxtLink>
+            </button>
           </div>
         </div>
       </template>
@@ -188,4 +200,6 @@ const mapsUrl = computed(() =>
       </template>
     </div>
   </main>
+
+  <BookingModal v-if="modalServicio" :profile="profile" :servicio="modalServicio" @close="modalServicio = null" />
 </template>

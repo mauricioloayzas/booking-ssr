@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { PublicServicio } from '~/types'
+
 const route = useRoute()
 const config = useRuntimeConfig()
 const slug = route.params.slug as string
@@ -93,6 +95,9 @@ function rangosDelDia(h: { hora_inicio: string; hora_fin: string; hora_inicio_br
   }
   return `${h.hora_inicio} - ${h.hora_fin}`
 }
+
+const modalServicio = ref<PublicServicio | null>(null)
+const volviendoDePayphone = route.query.pago === 'ok'
 </script>
 
 <template>
@@ -103,6 +108,10 @@ function rangosDelDia(h: { hora_inicio: string; hora_fin: string; hora_inicio_br
   </div>
   <main class="container">
     <NuxtLink :to="`/${slug}`" class="btn btn-back">← {{ profile.name }}</NuxtLink>
+
+    <div v-if="volviendoDePayphone" class="card" style="background: var(--green-50); color: var(--green-600); margin-top: 12px;">
+      Tu pago fue procesado. {{ profile.name }} confirmará tu cita en breve.
+    </div>
 
     <div class="staff-hero">
       <img v-if="profesional.foto_url" :src="profesional.foto_url" :alt="profesional.nombre" class="staff-hero-photo">
@@ -151,9 +160,9 @@ function rangosDelDia(h: { hora_inicio: string; hora_fin: string; hora_inicio_br
               ${{ s.sale_price.toFixed(2) }}<template v-if="s.duracion_minutos"> · {{ s.duracion_minutos }} min</template>
             </p>
           </div>
-          <NuxtLink :to="`/agendar/${slug}?servicio_id=${s.id}&profesional_id=${profesionalId}`" class="btn btn-outline service-btn">
+          <button type="button" class="btn btn-outline service-btn" @click="modalServicio = s">
             Agendar
-          </NuxtLink>
+          </button>
         </div>
       </div>
     </template>
@@ -161,4 +170,6 @@ function rangosDelDia(h: { hora_inicio: string; hora_fin: string; hora_inicio_br
       <p>{{ profesional.nombre }} no tiene servicios disponibles por ahora.</p>
     </div>
   </main>
+
+  <BookingModal v-if="modalServicio" :profile="profile" :servicio="modalServicio" :profesional-id-inicial="profesionalId" @close="modalServicio = null" />
 </template>
