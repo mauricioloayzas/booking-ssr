@@ -18,6 +18,40 @@ const { data: profesionalesRes } = await useAsyncData(`perfil-profesionales-${pr
 )
 const profesionales = computed(() => profesionalesRes.value?.data ?? [])
 
+const { data: catalogoRes } = await useAsyncData(`perfil-catalogo-${profile.value.id}`, async () => {
+  try {
+    const [cats, servs] = await Promise.all([
+      booking.getCategorias(profile.value!.id),
+      booking.getServicios(profile.value!.id),
+    ])
+    return { categorias: cats.data ?? [], servicios: servs.data ?? [] }
+  } catch {
+    return { categorias: [], servicios: [] }
+  }
+})
+const categorias = computed(() => catalogoRes.value?.categorias ?? [])
+const servicios = computed(() => catalogoRes.value?.servicios ?? [])
+
+const busqueda = ref('')
+const categoriaFiltro = ref<string | null>(null)
+
+function toggleCategoriaFiltro(id: string) {
+  categoriaFiltro.value = categoriaFiltro.value === id ? null : id
+}
+
+const serviciosFiltrados = computed(() => {
+  const q = busqueda.value.trim().toLowerCase()
+  return servicios.value.filter((s) => {
+    if (categoriaFiltro.value && s.categoria_servicio_id !== categoriaFiltro.value) return false
+    if (!q) return true
+    return s.name.toLowerCase().includes(q) || (s.description ?? '').toLowerCase().includes(q)
+  })
+})
+
+function nombreCategoria(id: string | null) {
+  return categorias.value.find(c => c.id === id)?.nombre ?? null
+}
+
 const canonicalUrl = `${config.public.siteUrl}/${slug}`
 
 useSeoMeta({
@@ -91,6 +125,46 @@ const mapsUrl = computed(() =>
       <NuxtLink :to="`/agendar/${slug}`" class="btn btn-primary" style="margin-top: 20px;">
         Reservar cita
       </NuxtLink>
+
+      <template v-if="servicios.length">
+        <h2 style="margin-top: 32px;">Servicios</h2>
+        <input v-model="busqueda" type="search" class="search-input" placeholder="Buscar servicio...">
+
+        <div v-if="categorias.length" class="tag-list">
+          <button
+            v-for="c in categorias"
+            :key="c.id"
+            type="button"
+            class="tag-btn"
+            :class="{ selected: categoriaFiltro === c.id }"
+            @click="toggleCategoriaFiltro(c.id)"
+          >
+            {{ c.nombre }}
+          </button>
+        </div>
+
+        <div v-if="!serviciosFiltrados.length" class="state-container">
+          <p>
+            No encontramos servicios
+            <template v-if="nombreCategoria(categoriaFiltro)"> en "{{ nombreCategoria(categoriaFiltro) }}"</template>
+            con ese criterio.
+          </p>
+        </div>
+        <div v-else class="service-grid">
+          <div v-for="s in serviciosFiltrados" :key="s.id" class="service-card">
+            <div class="service-info">
+              <p class="service-name">{{ s.name }}</p>
+              <p v-if="s.description" class="service-desc">{{ s.description }}</p>
+              <p class="service-sub">
+                ${{ s.sale_price.toFixed(2) }}<template v-if="s.duracion_minutos"> · {{ s.duracion_minutos }} min</template>
+              </p>
+            </div>
+            <NuxtLink :to="`/agendar/${slug}?servicio_id=${s.id}`" class="btn btn-outline service-btn">
+              Agendar
+            </NuxtLink>
+          </div>
+        </div>
+      </template>
 
       <template v-if="profesionales.length">
         <h2 style="margin-top: 32px;">Nuestro equipo</h2>

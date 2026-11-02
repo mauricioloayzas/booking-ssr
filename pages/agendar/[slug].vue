@@ -58,13 +58,22 @@ const { data: bootstrap, pending: loadingBootstrap } = await useAsyncData(`boots
 
 type Step = 'categoria' | 'profesional' | 'servicio' | 'establecimiento' | 'fecha' | 'hora' | 'contacto' | 'pago' | 'success'
 const volviendoDePayphone = route.query.pago === 'ok'
-const step = ref<Step>(volviendoDePayphone ? 'success' : 'categoria')
+
+// Deep-link desde una card de servicio en /:slug (catálogo público) — viene con el
+// servicio ya elegido, así que saltamos directo al paso de profesional en vez de
+// hacer re-elegir la categoría desde cero.
+const servicioIdPreseleccionado = typeof route.query.servicio_id === 'string' ? route.query.servicio_id : ''
+const servicioPreseleccionado = servicioIdPreseleccionado
+  ? bootstrap.value?.servicios.find(s => s.id === servicioIdPreseleccionado) ?? null
+  : null
+
+const step = ref<Step>(volviendoDePayphone ? 'success' : servicioPreseleccionado ? 'profesional' : 'categoria')
 const submitError = ref('')
 const submitting = ref(false)
 
-const categoriaId = ref('')
+const categoriaId = ref(servicioPreseleccionado?.categoria_servicio_id ?? '')
 const profesionalId = ref('')
-const servicioId = ref('')
+const servicioId = ref(servicioPreseleccionado?.id ?? '')
 const establecimientoId = ref('')
 const fecha = ref('')
 const horaInicio = ref('')
@@ -135,6 +144,7 @@ function seleccionarCategoria(id: string) {
 
 async function seleccionarProfesional(id: string) {
   profesionalId.value = id
+  const servicioDeepLink = servicioId.value
   servicioId.value = ''
   establecimientoId.value = ''
   loadingProfesionalDetail.value = true
@@ -151,7 +161,15 @@ async function seleccionarProfesional(id: string) {
   } finally {
     loadingProfesionalDetail.value = false
   }
-  step.value = 'servicio'
+
+  // Si venimos de un deep-link de servicio y este profesional sí lo ofrece, nos
+  // ahorramos el paso "servicio" (ya está elegido) — si no lo ofrece, cae al paso
+  // normal para que el cliente elija entre lo que sí da este profesional.
+  if (servicioDeepLink && serviciosDelProfesionalIds.value.includes(servicioDeepLink)) {
+    seleccionarServicio(servicioDeepLink)
+  } else {
+    step.value = 'servicio'
+  }
 }
 
 function seleccionarServicio(id: string) {
