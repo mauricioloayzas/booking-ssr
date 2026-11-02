@@ -9,6 +9,7 @@ import type {
   PreparePaymentPublicResponse,
   PublicCategoriaServicio,
   PublicEstablecimiento,
+  PublicHorario,
   PublicPaymentMethod,
   PublicProfesional,
   PublicProfile,
@@ -43,6 +44,9 @@ export function usePublicBooking() {
 
     getEstablecimientosDelProfesional: (profileId: string, profesionalId: string) =>
       professionalis.get<{ warehouse_id: string }[]>(`/public/profiles/${profileId}/profesionales/${profesionalId}/establecimientos`),
+
+    getHorariosProfesional: (profileId: string, profesionalId: string) =>
+      professionalis.get<PublicHorario[]>(`/public/profiles/${profileId}/profesionales/${profesionalId}/horarios`),
 
     getDisponibilidad: (profileId: string, profesionalId: string, establecimientoId: string, fecha: string, duracionMinutos: number) =>
       professionalis.get<DisponibilidadSlot[]>(`/public/profiles/${profileId}/profesionales/${profesionalId}/disponibilidad`, {

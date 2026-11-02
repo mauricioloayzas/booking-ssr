@@ -66,6 +66,9 @@ const servicioIdPreseleccionado = typeof route.query.servicio_id === 'string' ? 
 const servicioPreseleccionado = servicioIdPreseleccionado
   ? bootstrap.value?.servicios.find(s => s.id === servicioIdPreseleccionado) ?? null
   : null
+// Si además viene de la página de un profesional puntual (vio sus servicios y eligió uno ahí),
+// nos saltamos también el paso "profesional" — ver la llamada a seleccionarProfesional() más abajo.
+const profesionalIdPreseleccionado = typeof route.query.profesional_id === 'string' ? route.query.profesional_id : ''
 
 const step = ref<Step>(volviendoDePayphone ? 'success' : servicioPreseleccionado ? 'profesional' : 'categoria')
 const submitError = ref('')
@@ -170,6 +173,13 @@ async function seleccionarProfesional(id: string) {
   } else {
     step.value = 'servicio'
   }
+}
+
+// Deep-link desde la página de un profesional puntual (vio sus servicios y eligió uno ahí) —
+// nos ahorramos también el paso "profesional", reusando toda la lógica de arriba. Se espera
+// (await) para que el SSR ya entregue el paso final resuelto, no el estado de carga intermedio.
+if (servicioPreseleccionado && profesionalIdPreseleccionado) {
+  await seleccionarProfesional(profesionalIdPreseleccionado)
 }
 
 function seleccionarServicio(id: string) {

@@ -36,6 +36,14 @@ export interface PublicServicio {
   categoria_servicio_id: string | null
 }
 
+export interface PublicHorario {
+  dia_semana: number
+  hora_inicio: string
+  hora_fin: string
+  hora_inicio_break: string | null
+  hora_fin_break: string | null
+}
+
 export interface PublicEstablecimiento {
   id: string
   name: string

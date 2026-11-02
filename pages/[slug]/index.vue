@@ -169,12 +169,22 @@ const mapsUrl = computed(() =>
       <template v-if="profesionales.length">
         <h2 style="margin-top: 32px;">Nuestro equipo</h2>
         <div class="staff-grid">
-          <div v-for="p in profesionales" :key="p.id" class="staff-card">
+          <NuxtLink v-for="p in profesionales" :key="p.id" :to="`/${slug}/profesional/${p.id}`" class="staff-card">
             <img v-if="p.foto_url" :src="p.foto_url" :alt="p.nombre" class="staff-photo">
             <div v-else class="staff-photo-placeholder">{{ iniciales(p.nombre) }}</div>
             <p class="staff-name">{{ p.nombre }}</p>
-          </div>
+          </NuxtLink>
         </div>
+      </template>
+
+      <template v-if="profile.direccion">
+        <h2 style="margin-top: 32px;">Cómo llegar</h2>
+        <iframe
+          class="map-embed"
+          :src="`https://maps.google.com/maps?q=${encodeURIComponent(profile.direccion)}&output=embed`"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        />
       </template>
     </div>
   </main>
