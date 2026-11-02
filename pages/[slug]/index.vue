@@ -132,6 +132,14 @@ const volviendoDePayphone = route.query.pago === 'ok'
         </div>
       </div>
 
+      <iframe
+        v-if="profile.direccion"
+        class="map-embed"
+        :src="`https://maps.google.com/maps?q=${encodeURIComponent(profile.direccion)}&output=embed`"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+      />
+
       <p v-if="profile.descripcion" class="card" style="margin-top: 16px;">{{ profile.descripcion }}</p>
 
       <NuxtLink :to="`/agendar/${slug}`" class="btn btn-primary" style="margin-top: 20px;">
@@ -187,16 +195,6 @@ const volviendoDePayphone = route.query.pago === 'ok'
             <p class="staff-name">{{ p.nombre }}</p>
           </NuxtLink>
         </div>
-      </template>
-
-      <template v-if="profile.direccion">
-        <h2 style="margin-top: 32px;">Cómo llegar</h2>
-        <iframe
-          class="map-embed"
-          :src="`https://maps.google.com/maps?q=${encodeURIComponent(profile.direccion)}&output=embed`"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-        />
       </template>
     </div>
   </main>
