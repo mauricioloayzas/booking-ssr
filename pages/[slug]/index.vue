@@ -92,6 +92,10 @@ const mapsUrl = computed(() =>
     : null
 )
 
+function irAServicios() {
+  document.getElementById('servicios')?.scrollIntoView({ behavior: 'smooth' })
+}
+
 const modalServicio = ref<PublicServicio | null>(null)
 // Tras un pago con Payphone, el navegador vuelve aquí tras un full-redirect — el modal
 // perdió todo su estado en el camino, así que avisamos con un banner simple en vez de
@@ -142,12 +146,15 @@ const volviendoDePayphone = route.query.pago === 'ok'
 
       <p v-if="profile.descripcion" class="card" style="margin-top: 16px;">{{ profile.descripcion }}</p>
 
-      <NuxtLink :to="`/agendar/${slug}`" class="btn btn-primary" style="margin-top: 20px;">
+      <button v-if="servicios.length" type="button" class="btn btn-primary" style="margin-top: 20px;" @click="irAServicios">
+        Reservar cita
+      </button>
+      <NuxtLink v-else :to="`/agendar/${slug}`" class="btn btn-primary" style="margin-top: 20px;">
         Reservar cita
       </NuxtLink>
 
       <template v-if="servicios.length">
-        <h2 style="margin-top: 32px;">Servicios</h2>
+        <h2 id="servicios" style="margin-top: 32px;">Servicios</h2>
         <input v-model="busqueda" type="search" class="search-input" placeholder="Buscar servicio...">
 
         <div v-if="categorias.length" class="tag-list">
